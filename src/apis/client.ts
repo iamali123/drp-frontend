@@ -1,27 +1,36 @@
 /**
  * Central API client: base URL and global headers for all API requests.
- * X-Organization-Id is set globally from VITE_ORGANIZATION_ID — no per-API configuration needed.
+ * Authorization (Bearer token) and X-Organization-Id come from auth store (set after login).
+ * Env VITE_ORGANIZATION_ID is only used when no token is present (e.g. before login).
  */
 
+import { authStore } from "@/lib/authStore";
+
 const API_BASE = import.meta.env.VITE_API_BASE ?? "";
-const ORGANIZATION_ID = import.meta.env.VITE_ORGANIZATION_ID ?? "";
+const ENV_ORGANIZATION_ID = import.meta.env.VITE_ORGANIZATION_ID ?? "";
 
 export function getApiBaseUrl(): string {
   return API_BASE.replace(/\/$/, "");
 }
 
+/** Current organization ID: from logged-in token (decoded JWT) or env fallback. */
 export function getOrganizationId(): string {
-  return ORGANIZATION_ID;
+  return authStore.getOrganizationId() ?? ENV_ORGANIZATION_ID;
 }
 
-/** Headers applied to every API request (base URL + org context). Add new global headers here. */
+/** Headers applied to every API request: base URL, Bearer token, X-Organization-Id. */
 function getDefaultHeaders(): Record<string, string> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     Accept: "application/json",
   };
-  if (ORGANIZATION_ID) {
-    headers["X-Organization-Id"] = ORGANIZATION_ID;
+  const token = authStore.getToken();
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+  const orgId = authStore.getOrganizationId() ?? ENV_ORGANIZATION_ID;
+  if (orgId) {
+    headers["X-Organization-Id"] = orgId;
   }
   return headers;
 }

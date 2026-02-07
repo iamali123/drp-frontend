@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Outlet, NavLink, useNavigate } from "react-router-dom";
+import { Outlet, NavLink, Link, useNavigate } from "react-router-dom";
 import { LayoutDashboard, BarChart3, Wallet, FileText, User, LogOut, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
@@ -40,7 +40,13 @@ export function DriverLayout() {
           </Button>
           <img src="/drp-logo.png" alt="DRP" className="h-8 w-auto object-contain" />
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          <Link
+            to="/driver/change-password"
+            className="text-sm text-teal-400 hover:text-teal-300 hover:underline"
+          >
+            Change password
+          </Link>
           <NavLink
             to="/driver/profile"
             className="flex items-center gap-2 rounded-full p-1 hover:bg-slate-700"

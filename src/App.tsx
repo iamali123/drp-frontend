@@ -1,6 +1,9 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
 import { LoginPage } from "@/pages/auth/LoginPage";
+import { ForgotPasswordPage } from "@/pages/auth/ForgotPasswordPage";
+import { ResetPasswordPage } from "@/pages/auth/ResetPasswordPage";
+import { ChangePasswordPage } from "@/pages/auth/ChangePasswordPage";
 import { SafetyLayout } from "@/layouts/SafetyLayout";
 import { DriverLayout } from "@/layouts/DriverLayout";
 import { AdminDashboard } from "@/pages/safety/AdminDashboard";
@@ -15,6 +18,7 @@ import { BonusReportsPage } from "@/pages/safety/BonusReportsPage";
 import { UsersPage } from "@/pages/safety/UsersPage";
 import { ContactQueriesPage } from "@/pages/safety/ContactQueriesPage";
 import { OrganizationsPage } from "@/pages/safety/OrganizationsPage";
+import { DepartmentsPage } from "@/pages/safety/DepartmentsPage";
 import { DriverDashboard } from "@/pages/driver/DriverDashboard";
 import { DriverAnalytics } from "@/pages/driver/DriverAnalytics";
 import { DriverBonuses } from "@/pages/driver/DriverBonuses";
@@ -52,6 +56,8 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/about_drp" element={<AboutDrpPage />} />
       <Route path="/faq" element={<FaqPage />} />
       <Route path="/rules_and_regulation" element={<RulesPage />} />
@@ -77,6 +83,8 @@ export default function App() {
         <Route path="users" element={<UsersPage />} />
         <Route path="contacts" element={<ContactQueriesPage />} />
         <Route path="organizations" element={<OrganizationsPage />} />
+        <Route path="departments" element={<DepartmentsPage />} />
+        <Route path="change-password" element={<ChangePasswordPage />} />
       </Route>
 
       <Route
@@ -94,6 +102,7 @@ export default function App() {
         <Route path="leave-requests" element={<DriverLeaveRequests />} />
         <Route path="contact" element={<DriverContactPage />} />
         <Route path="profile" element={<DriverProfilePage />} />
+        <Route path="change-password" element={<ChangePasswordPage />} />
       </Route>
 
       <Route path="/" element={<Navigate to="/login" replace />} />

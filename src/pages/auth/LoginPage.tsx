@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 export function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const { login, user } = useAuth();
@@ -25,7 +26,7 @@ export function LoginPage() {
     setError("");
     setLoading(true);
     try {
-      await login(email, password);
+      await login(email, password, rememberMe);
       const stored = localStorage.getItem("drp_user");
       const u = stored ? JSON.parse(stored) : null;
       if (u?.isSafetyDepartment) navigate("/admin/dashboard", { replace: true });
@@ -73,7 +74,15 @@ export function LoginPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Password</Label>
+                <Link
+                  to="/forgot-password"
+                  className="text-sm text-teal-600 hover:text-teal-700 hover:underline"
+                >
+                  Forgot password?
+                </Link>
+              </div>
               <Input
                 id="password"
                 type="password"
@@ -83,15 +92,19 @@ export function LoginPage() {
                 required
               />
             </div>
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-600">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500"
+              />
+              Remember me
+            </label>
             <Button type="submit" className="w-full bg-slate-800 hover:bg-slate-900" disabled={loading}>
               {loading ? "Signing in…" : "Continue"}
             </Button>
           </form>
-          <div className="mt-6 rounded-lg border border-slate-200 bg-slate-50 p-3 text-center text-xs text-slate-600">
-            <p className="font-medium text-slate-700">Demo login (no API)</p>
-            <p className="mt-1">Admin: <code className="rounded bg-slate-200 px-1">admin@demo.com</code> / <code className="rounded bg-slate-200 px-1">demo123</code></p>
-            <p className="mt-0.5">Driver: <code className="rounded bg-slate-200 px-1">driver@demo.com</code> / <code className="rounded bg-slate-200 px-1">demo123</code></p>
-          </div>
           <p className="mt-4 text-center text-sm text-slate-500">
             Orior Media · DRP Dashboard
           </p>

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Outlet, NavLink, useLocation, useNavigate } from "react-router-dom";
+import { Outlet, NavLink, Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   BarChart3,
@@ -13,6 +13,7 @@ import {
   UserCircle,
   Mail,
   Building2,
+  FolderTree,
   Menu,
   X,
   LogOut,
@@ -35,6 +36,7 @@ const navItems = [
   { to: "/admin/users", label: "Users", icon: UserCircle },
   { to: "/admin/contacts", label: "Contact Queries", icon: Mail },
   { to: "/admin/organizations", label: "Organizations", icon: Building2 },
+  { to: "/admin/departments", label: "Departments", icon: FolderTree },
 ];
 
 export function SafetyLayout() {
@@ -169,7 +171,13 @@ export function SafetyLayout() {
               <span>/</span>
               <span className="font-medium text-slate-900">{breadcrumb}</span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
+              <Link
+                to="/admin/change-password"
+                className="text-sm text-teal-600 hover:text-teal-700 hover:underline"
+              >
+                Change password
+              </Link>
               <span className="text-sm text-slate-500">{user?.email}</span>
               <Button
                 variant="ghost"

@@ -15,12 +15,15 @@ import type {
   Organization,
   OrganizationCreateInput,
   OrganizationUpdateInput,
+  OrganizationListPagedResponse,
 } from "@/apis/types/organizations";
 
 export const organizationKeys = {
   all: ["organizations"] as const,
   lists: () => [...organizationKeys.all, "list"] as const,
   list: () => [...organizationKeys.lists()] as const,
+  listPaged: (pageIndex: number, pageSize: number) =>
+    [...organizationKeys.all, "listPaged", pageIndex, pageSize] as const,
   details: () => [...organizationKeys.all, "detail"] as const,
   detail: (id: string) => [...organizationKeys.details(), id] as const,
 };
@@ -34,6 +37,22 @@ export function useOrganizationsList(
   return useQuery({
     queryKey: organizationKeys.list(),
     queryFn: () => organizationsService.list(),
+    ...options,
+  });
+}
+
+export function useOrganizationsListPagination(
+  pageIndex: number,
+  pageSize: number,
+  options?: Omit<
+    UseQueryOptions<OrganizationListPagedResponse, Error>,
+    "queryKey" | "queryFn"
+  >
+) {
+  return useQuery({
+    queryKey: organizationKeys.listPaged(pageIndex, pageSize),
+    queryFn: () =>
+      organizationsService.listPagination({ pageIndex, pageSize }),
     ...options,
   });
 }

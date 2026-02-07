@@ -16,55 +16,54 @@ import {
   DropdownMenuTrigger,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
-import { Badge } from "@/components/ui/badge";
-import { UserFormDialog } from "@/components/users/UserFormDialog";
+import { DepartmentFormDialog } from "@/components/departments/DepartmentFormDialog";
 import { FlashMessage } from "@/components/global/FlashMessage";
 import { useAuth } from "@/lib/auth";
 import {
-  useUsersList,
-  useCreateUser,
-  useUpdateUser,
-  useDeleteUser,
-} from "@/apis/hooks/useUsers";
-import type { User, CreateUserPayload, UpdateUserPayload } from "@/apis/types/users";
-import { MoreHorizontal, Plus, Pencil, Trash2, Users } from "lucide-react";
+  useDepartmentsList,
+  useCreateDepartment,
+  useUpdateDepartment,
+  useDeleteDepartment,
+} from "@/apis/hooks/useDepartments";
+import type { Department } from "@/apis/types/departments";
+import { MoreHorizontal, Plus, Pencil, Trash2, Layers } from "lucide-react";
 
-export function UsersPage() {
+export function DepartmentsPage() {
   const { user: authUser } = useAuth();
   const defaultOrganizationId = authUser?.organizationId ?? "";
   const [flash, setFlash] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [editingDept, setEditingDept] = useState<Department | null>(null);
 
-  const { data: users = [], isLoading, isError, error } = useUsersList();
-  const createMutation = useCreateUser({
+  const { data: departments = [], isLoading, isError, error } = useDepartmentsList();
+  const createMutation = useCreateDepartment({
     onSuccess: () => {
       setCreateOpen(false);
-      setFlash({ type: "success", message: "User created successfully." });
+      setFlash({ type: "success", message: "Department created successfully." });
     },
     onError: (e) => setFlash({ type: "error", message: e.message }),
   });
-  const updateMutation = useUpdateUser({
+  const updateMutation = useUpdateDepartment({
     onSuccess: () => {
-      setEditingUser(null);
-      setFlash({ type: "success", message: "User updated successfully." });
+      setEditingDept(null);
+      setFlash({ type: "success", message: "Department updated successfully." });
     },
     onError: (e) => setFlash({ type: "error", message: e.message }),
   });
-  const deleteMutation = useDeleteUser({
-    onSuccess: () => setFlash({ type: "success", message: "User removed." }),
+  const deleteMutation = useDeleteDepartment({
+    onSuccess: () => setFlash({ type: "success", message: "Department deleted." }),
     onError: (e) => setFlash({ type: "error", message: e.message }),
   });
 
-  const handleCreate = (payload: CreateUserPayload) => {
+  const handleCreate = (payload: { departmentName: string; organizationId: string }) => {
     createMutation.mutate(payload);
   };
-  const handleUpdate = (payload: UpdateUserPayload) => {
+  const handleUpdate = (payload: { id: string; departmentName: string }) => {
     updateMutation.mutate({ id: payload.id, payload });
   };
-  const handleDelete = (u: User) => {
-    if (!window.confirm(`Remove user "${u.firstName} ${u.lastName}"?`)) return;
-    deleteMutation.mutate(u.id);
+  const handleDelete = (d: Department) => {
+    if (!window.confirm(`Delete department "${d.departmentName}"?`)) return;
+    deleteMutation.mutate(d.id);
   };
 
   return (
@@ -75,8 +74,8 @@ export function UsersPage() {
         onDismiss={() => setFlash(null)}
       />
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h2 className="text-xl font-semibold text-slate-900" id="users-header">
-          Users
+        <h2 className="text-xl font-semibold text-slate-900" id="departments-header">
+          Departments
         </h2>
         <Button
           onClick={() => setCreateOpen(true)}
@@ -84,20 +83,20 @@ export function UsersPage() {
           className="gap-2"
         >
           <Plus className="h-4 w-4" />
-          Add user
+          Add department
         </Button>
       </div>
       {!defaultOrganizationId && (
         <p className="text-sm text-amber-700">
-          Sign in with an organization context to create users.
+          Sign in with an organization context to create departments.
         </p>
       )}
 
       <Card>
         <CardContent className="pt-4">
           <div className="flex items-center gap-2 pb-3 text-slate-600">
-            <Users className="h-5 w-5" />
-            <span className="font-medium">Organization users</span>
+            <Layers className="h-5 w-5" />
+            <span className="font-medium">Organization departments</span>
           </div>
           {isLoading && (
             <div className="flex items-center justify-center py-12">
@@ -106,49 +105,31 @@ export function UsersPage() {
           )}
           {isError && (
             <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-              {error?.message ?? "Failed to load users."}
+              {error?.message ?? "Failed to load departments."}
             </div>
           )}
-          {!isLoading && !isError && users.length === 0 && (
-            <p className="py-8 text-center text-slate-500">No users found.</p>
+          {!isLoading && !isError && departments.length === 0 && (
+            <p className="py-8 text-center text-slate-500">No departments yet. Create one to get started.</p>
           )}
-          {!isLoading && !isError && users.length > 0 && (
+          {!isLoading && !isError && departments.length > 0 && (
             <div className="overflow-x-auto rounded-md border border-slate-200">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Name</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Department</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead>Organization ID</TableHead>
+                    <TableHead>Created</TableHead>
                     <TableHead className="w-12" />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {users.map((u) => (
-                    <TableRow key={u.id}>
-                      <TableCell className="font-medium">
-                        {u.firstName} {u.lastName}
+                  {departments.map((d) => (
+                    <TableRow key={d.id}>
+                      <TableCell className="font-medium">{d.departmentName}</TableCell>
+                      <TableCell className="font-mono text-sm text-slate-600">
+                        {d.organizationId}
                       </TableCell>
-                      <TableCell className="text-slate-600">{u.email}</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">{u.role}</Badge>
-                      </TableCell>
-                      <TableCell className="text-slate-600">
-                        {u.departmentName || "—"}
-                      </TableCell>
-                      <TableCell>
-                        {!u.isActive ? (
-                          <Badge variant="outline" className="text-slate-500">
-                            Inactive
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline" className="text-emerald-600">
-                            Active
-                          </Badge>
-                        )}
-                      </TableCell>
+                      <TableCell className="text-slate-600">{d.createdAt}</TableCell>
                       <TableCell>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -159,13 +140,13 @@ export function UsersPage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem onClick={() => setEditingUser(u)}>
+                            <DropdownMenuItem onClick={() => setEditingDept(d)}>
                               <Pencil className="mr-2 h-4 w-4" />
                               Edit
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               className="text-red-600"
-                              onClick={() => handleDelete(u)}
+                              onClick={() => handleDelete(d)}
                             >
                               <Trash2 className="mr-2 h-4 w-4" />
                               Delete
@@ -182,7 +163,7 @@ export function UsersPage() {
         </CardContent>
       </Card>
 
-      <UserFormDialog
+      <DepartmentFormDialog
         mode="create"
         open={createOpen}
         onOpenChange={setCreateOpen}
@@ -190,12 +171,12 @@ export function UsersPage() {
         onSubmit={handleCreate}
         isSubmitting={createMutation.isPending}
       />
-      {editingUser && (
-        <UserFormDialog
+      {editingDept && (
+        <DepartmentFormDialog
           mode="edit"
-          open={!!editingUser}
-          onOpenChange={(open) => !open && setEditingUser(null)}
-          initialValues={editingUser}
+          open={!!editingDept}
+          onOpenChange={(open) => !open && setEditingDept(null)}
+          initialValues={editingDept}
           onSubmit={handleUpdate}
           isSubmitting={updateMutation.isPending}
         />

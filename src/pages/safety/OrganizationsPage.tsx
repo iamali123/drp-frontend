@@ -127,13 +127,13 @@ export function OrganizationsPage() {
                     <TableRow key={org.id}>
                       <TableCell className="font-medium">{org.name}</TableCell>
                       <TableCell className="max-w-[180px] truncate text-slate-600">
-                        {org.address ?? "—"}
+                        {org.address || "—"}
                       </TableCell>
                       <TableCell className="text-slate-600">
-                        {org.companyContactName ?? "—"}
+                        {org.companyContactName || "—"}
                       </TableCell>
                       <TableCell className="text-slate-600">
-                        {org.dotNumber ?? "—"} / {org.mcNumber ?? "—"}
+                        {org.dotNumber || "—"} / {org.mcNumber || "—"}
                       </TableCell>
                       <TableCell>
                         {org.accountStatus ? (
@@ -153,7 +153,7 @@ export function OrganizationsPage() {
                         {org.maxDriverSeats ?? "—"}
                       </TableCell>
                       <TableCell className="text-slate-600">
-                        {org.telematicsProvider ?? "—"}
+                        {org.telematicsProvider || "—"}
                       </TableCell>
                       <TableCell>
                         <DropdownMenu>
