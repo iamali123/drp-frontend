@@ -14,13 +14,19 @@ import {
   Mail,
   Building2,
   FolderTree,
+  Settings,
   Menu,
   X,
   LogOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/lib/auth";
-import { FlashMessage } from "@/components/global/FlashMessage";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -33,8 +39,8 @@ const navItems = [
   { to: "/admin/driver-list", label: "Driver List", icon: Users },
   { to: "/admin/leave-requests", label: "Leave Requests", icon: FileText },
   { to: "/admin/bonus-reports", label: "Bonus Reports", icon: Wallet },
-  { to: "/admin/users", label: "Users", icon: UserCircle },
   { to: "/admin/contacts", label: "Contact Queries", icon: Mail },
+  { to: "/admin/users", label: "Users", icon: UserCircle },
   { to: "/admin/organizations", label: "Organizations", icon: Building2 },
   { to: "/admin/departments", label: "Departments", icon: FolderTree },
 ];
@@ -172,25 +178,37 @@ export function SafetyLayout() {
               <span className="font-medium text-slate-900">{breadcrumb}</span>
             </div>
             <div className="flex items-center gap-3">
-              <Link
-                to="/admin/change-password"
-                className="text-sm text-teal-600 hover:text-teal-700 hover:underline"
-              >
-                Change password
-              </Link>
-              <span className="text-sm text-slate-500">{user?.email}</span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleLogout}
-                className="gap-2 text-slate-600"
-              >
-                <LogOut className="h-4 w-4" />
-                Sign out
-              </Button>
-            </div>
+            <span className="text-sm text-slate-500">{user?.email}</span>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-teal-100 text-teal-700 ring-offset-white transition-colors hover:bg-teal-200 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
+                  aria-label="Open account menu"
+                >
+                  <span className="text-sm font-medium">
+                    {(user?.firstName?.[0] ?? user?.email?.[0] ?? "?").toUpperCase()}
+                  </span>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem asChild>
+                  <Link to="/admin/settings" className="flex cursor-pointer items-center gap-2">
+                    <Settings className="h-4 w-4" />
+                    Settings
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={handleLogout}
+                  className="cursor-pointer text-red-600 focus:text-red-600"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Sign out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
-
+          </div>
           <div className="p-4 xl:p-8">
             <Outlet />
           </div>

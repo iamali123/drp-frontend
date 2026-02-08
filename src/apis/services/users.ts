@@ -18,6 +18,13 @@ function unwrap<T>(res: UserApiResponse<T> | T): T | undefined {
 }
 
 export const usersService = {
+  async getMe(): Promise<User> {
+    const res = await apiRequest<UserApiResponse<User>>(`${BASE}/me`);
+    const data = unwrap(res);
+    if (!data) throw new Error("Failed to load user");
+    return data;
+  },
+
   async listOrganizationUsers(): Promise<User[]> {
     const res = await apiRequest<UserApiResponse<User[]>>(`${BASE}/list-organization-users`);
     const data = unwrap(res);

@@ -25,6 +25,7 @@ import { DriverBonuses } from "@/pages/driver/DriverBonuses";
 import { DriverLeaveRequests } from "@/pages/driver/DriverLeaveRequests";
 import { DriverContactPage } from "@/pages/driver/DriverContactPage";
 import { DriverProfilePage } from "@/pages/driver/DriverProfilePage";
+import { SettingsPage } from "@/pages/settings/SettingsPage";
 import { AboutDrpPage } from "@/pages/static/AboutDrpPage";
 import { FaqPage } from "@/pages/static/FaqPage";
 import { RulesPage } from "@/pages/static/RulesPage";
@@ -84,6 +85,7 @@ export default function App() {
         <Route path="contacts" element={<ContactQueriesPage />} />
         <Route path="organizations" element={<OrganizationsPage />} />
         <Route path="departments" element={<DepartmentsPage />} />
+        <Route path="settings" element={<SettingsPage />} />
         <Route path="change-password" element={<ChangePasswordPage />} />
       </Route>
 
@@ -102,6 +104,7 @@ export default function App() {
         <Route path="leave-requests" element={<DriverLeaveRequests />} />
         <Route path="contact" element={<DriverContactPage />} />
         <Route path="profile" element={<DriverProfilePage />} />
+        <Route path="settings" element={<SettingsPage />} />
         <Route path="change-password" element={<ChangePasswordPage />} />
       </Route>
 

@@ -1,7 +1,13 @@
 import { useState } from "react";
 import { Outlet, NavLink, Link, useNavigate } from "react-router-dom";
-import { LayoutDashboard, BarChart3, Wallet, FileText, User, LogOut, Menu, X } from "lucide-react";
+import { LayoutDashboard, BarChart3, Wallet, FileText, User, Settings, LogOut, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
@@ -40,30 +46,40 @@ export function DriverLayout() {
           </Button>
           <img src="/drp-logo.png" alt="DRP" className="h-8 w-auto object-contain" />
         </div>
-        <div className="flex items-center gap-3">
-          <Link
-            to="/driver/change-password"
-            className="text-sm text-teal-400 hover:text-teal-300 hover:underline"
-          >
-            Change password
-          </Link>
-          <NavLink
-            to="/driver/profile"
-            className="flex items-center gap-2 rounded-full p-1 hover:bg-slate-700"
-          >
-            {user?.profileImageUrl ? (
-              <img
-                src={user.profileImageUrl}
-                alt=""
-                className="h-8 w-8 rounded-full object-cover"
-              />
-            ) : (
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-teal-600 text-sm font-medium">
-                {(user?.firstName?.[0] ?? user?.email?.[0] ?? "?").toUpperCase()}
-              </div>
-            )}
-          </NavLink>
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-teal-600 text-sm font-medium text-white ring-offset-slate-800 transition-colors hover:bg-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 focus:ring-offset-slate-800"
+              aria-label="Open account menu"
+            >
+              {user?.profileImageUrl ? (
+                <img
+                  src={user.profileImageUrl}
+                  alt=""
+                  className="h-9 w-9 rounded-full object-cover"
+                />
+              ) : (
+                <span>{(user?.firstName?.[0] ?? user?.email?.[0] ?? "?").toUpperCase()}</span>
+              )}
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem asChild>
+              <Link to="/driver/settings" className="flex cursor-pointer items-center gap-2">
+                <Settings className="h-4 w-4" />
+                Settings
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={handleLogout}
+              className="cursor-pointer text-red-600 focus:text-red-600"
+            >
+              <LogOut className="h-4 w-4" />
+              Sign out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </header>
 
       {sidebarOpen && (
@@ -110,14 +126,6 @@ export function DriverLayout() {
               {label}
             </NavLink>
           ))}
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-slate-300 hover:bg-slate-700 hover:text-white"
-          >
-            <LogOut className="h-4 w-4 shrink-0" />
-            Logout
-          </button>
         </nav>
       </aside>
 

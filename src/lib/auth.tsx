@@ -1,13 +1,9 @@
 import { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from "react";
 import { login as loginApi, refresh as refreshApi } from "@/apis/services/auth";
+import { usersService } from "@/apis/services/users";
+import type { User as ApiUser } from "@/apis/types/users";
 import { authStore } from "@/lib/authStore";
-import {
-  decodeJwt,
-  getOrganizationIdFromPayload,
-  getEmailFromPayload,
-  getRoleFromPayload,
-  isTokenExpired,
-} from "@/lib/jwt";
+import { isTokenExpired } from "@/lib/jwt";
 
 export interface User {
   id: number;
@@ -41,21 +37,27 @@ function roleToFlags(role: string): { isSafetyDepartment: boolean; isDriver: boo
   return { isSafetyDepartment: true, isDriver: false };
 }
 
-function userFromToken(accessToken: string, email: string): User {
-  const payload = decodeJwt(accessToken);
-  const orgId = getOrganizationIdFromPayload(payload);
-  const role = getRoleFromPayload(payload);
-  const { isSafetyDepartment, isDriver } = roleToFlags(role);
-  const userId = payload.userId ?? "";
-  const numericId = userId ? parseInt(userId.slice(0, 8), 16) || 0 : 0;
+/** Map /me API user to auth User. */
+function userFromMe(me: ApiUser): User {
+  const { isSafetyDepartment, isDriver } = roleToFlags(me.role);
+  const numericId = me.id ? parseInt(me.id.slice(0, 8), 16) || 0 : 0;
   return {
     id: numericId,
-    email: getEmailFromPayload(payload) || email,
+    email: me.email,
+    firstName: me.firstName,
+    lastName: me.lastName,
     isSafetyDepartment,
     isDriver,
-    userId,
-    organizationId: orgId || undefined,
+    userId: me.id,
+    organizationId: me.organizationId || undefined,
   };
+}
+
+async function fetchAndSetUser(): Promise<User | null> {
+  const me = await usersService.getMe();
+  const u = userFromMe(me);
+  authStore.setAuth(authStore.getToken()!, me.organizationId, authStore.getRefreshToken());
+  return u;
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -82,19 +84,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [user]);
 
-  const login = useCallback(async (email: string, password: string, rememberMe = false) => {
+  const login = useCallback(async (_email: string, password: string, rememberMe = false) => {
     setIsLoading(true);
     try {
-      const res = await loginApi({ email, password });
+      const res = await loginApi({ email: _email, password });
       const accessToken = res.data?.accessToken;
       if (!accessToken) throw new Error(res.message ?? "Login failed");
 
-      const payload = decodeJwt(accessToken);
-      const organizationId = getOrganizationIdFromPayload(payload);
       const refreshToken = rememberMe ? res.data?.refreshToken ?? null : null;
-      authStore.setAuth(accessToken, organizationId, refreshToken);
+      authStore.setAuth(accessToken, "", refreshToken);
 
-      const u = userFromToken(accessToken, email);
+      const u = await fetchAndSetUser();
       setUser(u);
     } finally {
       setIsLoading(false);
@@ -119,13 +119,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .then((res) => {
           const accessToken = res.data?.accessToken;
           if (!accessToken) return;
-          const payload = decodeJwt(accessToken);
-          const organizationId = getOrganizationIdFromPayload(payload);
           const newRefresh = res.data?.refreshToken ?? refreshToken;
-          authStore.setAuth(accessToken, organizationId, newRefresh);
-          const email = getEmailFromPayload(payload);
-          setUserState(userFromToken(accessToken, email));
+          authStore.setAuth(accessToken, "", newRefresh);
+          return fetchAndSetUser();
         })
+        .then((u) => u != null && setUser(u))
+        .catch(() => {
+          authStore.clearAuth();
+          setUserState(null);
+          localStorage.removeItem(USER_STORAGE_KEY);
+        })
+        .finally(() => setIsLoading(false));
+    } else if (token && !needsRefresh) {
+      setIsLoading(true);
+      fetchAndSetUser()
+        .then((u) => u != null && setUser(u))
         .catch(() => {
           authStore.clearAuth();
           setUserState(null);
