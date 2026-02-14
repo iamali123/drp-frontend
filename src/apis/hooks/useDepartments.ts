@@ -53,10 +53,14 @@ export function useCreateDepartment(
   return useMutation({
     mutationFn: (payload: CreateDepartmentPayload) =>
       departmentsService.create(payload),
-    onSuccess: () => {
+    onSuccess: (data, variables, context) => {
       queryClient.invalidateQueries({ queryKey: departmentKeys.lists() });
+      queryClient.refetchQueries({ queryKey: departmentKeys.lists() });
+      // Call custom onSuccess if provided
+      options?.onSuccess?.(data, variables, context);
     },
-    ...options,
+    onError: options?.onError,
+    onSettled: options?.onSettled,
   });
 }
 
@@ -71,13 +75,18 @@ export function useUpdateDepartment(
   return useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: UpdateDepartmentPayload }) =>
       departmentsService.update(id, payload),
-    onSuccess: (data) => {
+    onSuccess: (data, variables, context) => {
       queryClient.invalidateQueries({ queryKey: departmentKeys.lists() });
+      queryClient.refetchQueries({ queryKey: departmentKeys.lists() });
       if (data?.id) {
         queryClient.invalidateQueries({ queryKey: departmentKeys.detail(data.id) });
+        queryClient.refetchQueries({ queryKey: departmentKeys.detail(data.id) });
       }
+      // Call custom onSuccess if provided
+      options?.onSuccess?.(data, variables, context);
     },
-    ...options,
+    onError: options?.onError,
+    onSettled: options?.onSettled,
   });
 }
 
@@ -87,9 +96,13 @@ export function useDeleteDepartment(
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => departmentsService.delete(id),
-    onSuccess: () => {
+    onSuccess: (data, variables, context) => {
       queryClient.invalidateQueries({ queryKey: departmentKeys.lists() });
+      queryClient.refetchQueries({ queryKey: departmentKeys.lists() });
+      // Call custom onSuccess if provided
+      options?.onSuccess?.(data, variables, context);
     },
-    ...options,
+    onError: options?.onError,
+    onSettled: options?.onSettled,
   });
 }

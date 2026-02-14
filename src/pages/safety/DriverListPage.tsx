@@ -1,4 +1,3 @@
-import { useSearchParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { DataTable, type Column } from "@/components/global/DataTable";
@@ -9,58 +8,74 @@ import {
   DropdownMenuTrigger,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
-
-const base = import.meta.env.VITE_API_BASE || "";
-
-interface UserRow {
-  id: number;
-  first_name: string;
-  last_name: string;
-  email: string;
-  mobile_number?: string;
-  department_type?: string;
-  [key: string]: unknown;
-}
+import { Badge } from "@/components/ui/badge";
+import { driversService } from "@/apis/services/drivers";
+import type { Driver } from "@/apis/types/drivers";
+import { Users, MoreHorizontal, Eye, Pencil } from "lucide-react";
 
 export function DriverListPage() {
-  const [searchParams] = useSearchParams();
-  const departmentType = searchParams.get("department_type") ?? "";
-  const departmentName = searchParams.get("department_name") ?? "All";
-
-  const fetchData = async (params: { page: number; perPage: number; search?: string }) => {
-    const q = new URLSearchParams({
-      page: String(params.page),
-      per_page: String(params.perPage),
-      department_type: departmentType,
+  const fetchData = async (params: {
+    page: number;
+    perPage: number;
+    search?: string;
+  }) => {
+    const res = await driversService.listPagination({
+      pageIndex: params.page,
+      pageSize: params.perPage,
     });
-    if (params.search) q.set("search", params.search);
-    const res = await fetch(`${base}/safety_departments.json?${q}`);
-    const data = await res.json();
-    const rows = Array.isArray(data) ? data : data?.data ?? [];
-    return { data: rows as UserRow[], total: data?.total ?? rows.length };
+    let drivers = res.data || [];
+    if (params.search) {
+      const searchLower = params.search.toLowerCase();
+      drivers = drivers.filter(
+        (d) =>
+          d.username.toLowerCase().includes(searchLower) ||
+          d.phone.toLowerCase().includes(searchLower) ||
+          d.licenseNumber.toLowerCase().includes(searchLower) ||
+          d.licenseState.toLowerCase().includes(searchLower)
+      );
+    }
+    return { data: drivers, total: res.totalCount || drivers.length };
   };
 
-  const columns: Column<UserRow>[] = [
-    { key: "first_name", header: "First Name" },
-    { key: "last_name", header: "Last Name" },
-    { key: "email", header: "Email" },
-    { key: "mobile_number", header: "Mobile Number" },
-    { key: "department_type", header: "Category" },
+  const columns: Column<Driver>[] = [
+    { key: "username", header: "Username" },
+    { key: "phone", header: "Phone" },
+    { key: "licenseNumber", header: "License #" },
+    { key: "licenseState", header: "License State" },
+    {
+      key: "status",
+      header: "Status",
+      render: (row) => (
+        <Badge
+          variant={row.status === "active" ? "outline" : "secondary"}
+          className={row.status === "active" ? "text-emerald-600" : ""}
+        >
+          {row.status}
+        </Badge>
+      ),
+    },
+    { key: "driverType", header: "Type" },
+    { key: "timezone", header: "Timezone" },
     {
       key: "actions",
       header: "Actions",
       render: (row) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm">Actions</Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <MoreHorizontal className="h-4 w-4" />
+              <span className="sr-only">Actions</span>
+            </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem asChild>
-              <a href={`${base}/safety_departments/show_driver?driver_id=${row.id}`}>View</a>
+            <DropdownMenuItem>
+              <Eye className="mr-2 h-4 w-4" />
+              View
             </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <a href={`${base}/safety_departments/edit_driver?driver_id=${row.id}`}>Edit</a>
+            <DropdownMenuItem>
+              <Pencil className="mr-2 h-4 w-4" />
+              Edit
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -71,34 +86,21 @@ export function DriverListPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h2 className="text-xl font-semibold text-slate-900">
-          {departmentName} - Users
+        <h2 className="text-xl font-semibold text-slate-900" id="driver-list-header">
+          Drivers
         </h2>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="secondary" size="sm">Department Filters</Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuItem asChild>
-              <a href="?department_name=All">All</a>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <a href="?department_type=1&department_name=Safety">Safety</a>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <a href="?department_type=2&department_name=Operations">Operations</a>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
       </div>
 
       <Card>
         <CardContent className="pt-4">
-          <DataTable<UserRow>
+          <div className="flex items-center gap-2 pb-3 text-slate-600">
+            <Users className="h-5 w-5" />
+            <span className="font-medium">Organization drivers</span>
+          </div>
+          <DataTable<Driver>
             columns={columns}
             fetchData={fetchData}
-            searchPlaceholder="Search here…"
-            extraParams={{ department_type: departmentType }}
+            searchPlaceholder="Search by username, phone, license…"
           />
         </CardContent>
       </Card>

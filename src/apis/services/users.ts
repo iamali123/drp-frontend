@@ -8,6 +8,8 @@ import type {
   User,
   UpdateUserPayload,
   UserApiResponse,
+  StateItem,
+  StateOption,
 } from "@/apis/types/users";
 
 const BASE = "api/users";
@@ -62,5 +64,25 @@ export const usersService = {
     await apiRequest<UserApiResponse<void>>(`${BASE}/${encodeURIComponent(id)}`, {
       method: "DELETE",
     });
+  },
+
+  async getStates(countryCode: string): Promise<StateOption[]> {
+    const params = new URLSearchParams({ countryCode });
+    const res = await apiRequest<UserApiResponse<StateItem[]>>(
+      `${BASE}/get-states?${params}`
+    );
+    const data = unwrap(res);
+    if (!Array.isArray(data)) return [];
+    return data.map((item): StateOption => {
+      if (typeof item === "string") {
+        const dash = item.indexOf("-");
+        return dash >= 0
+          ? { code: item.slice(0, dash), name: item.slice(dash + 1) }
+          : { code: item, name: item };
+      }
+      const code = (item.code ?? "").toString();
+      const name = (item.name ?? item.code ?? "").toString();
+      return { code, name };
+    }).filter((s) => s.code || s.name);
   },
 };

@@ -83,10 +83,13 @@ export function useCreateOrganization(
   return useMutation({
     mutationFn: (payload: OrganizationCreateInput) =>
       organizationsService.create(payload),
-    onSuccess: (_, __, ctx) => {
+    onSuccess: (data, variables, context) => {
       queryClient.invalidateQueries({ queryKey: organizationKeys.lists() });
+      queryClient.refetchQueries({ queryKey: organizationKeys.lists() });
+      options?.onSuccess?.(data, variables, context);
     },
-    ...options,
+    onError: options?.onError,
+    onSettled: options?.onSettled,
   });
 }
 
@@ -101,15 +104,21 @@ export function useUpdateOrganization(
   return useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: OrganizationUpdateInput }) =>
       organizationsService.update(id, payload),
-    onSuccess: (data) => {
+    onSuccess: (data, variables, context) => {
       queryClient.invalidateQueries({ queryKey: organizationKeys.lists() });
+      queryClient.refetchQueries({ queryKey: organizationKeys.lists() });
       if (data?.id) {
         queryClient.invalidateQueries({
           queryKey: organizationKeys.detail(data.id),
         });
+        queryClient.refetchQueries({
+          queryKey: organizationKeys.detail(data.id),
+        });
       }
+      options?.onSuccess?.(data, variables, context);
     },
-    ...options,
+    onError: options?.onError,
+    onSettled: options?.onSettled,
   });
 }
 
@@ -119,9 +128,12 @@ export function useDeleteOrganization(
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => organizationsService.delete(id),
-    onSuccess: () => {
+    onSuccess: (data, variables, context) => {
       queryClient.invalidateQueries({ queryKey: organizationKeys.lists() });
+      queryClient.refetchQueries({ queryKey: organizationKeys.lists() });
+      options?.onSuccess?.(data, variables, context);
     },
-    ...options,
+    onError: options?.onError,
+    onSettled: options?.onSettled,
   });
 }

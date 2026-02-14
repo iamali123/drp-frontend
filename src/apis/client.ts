@@ -39,6 +39,23 @@ export interface ApiRequestInit extends RequestInit {
   params?: Record<string, string | number | boolean | undefined>;
 }
 
+/** API error shape: { Message?, Errors?, message?, error? } */
+function getApiErrorMessage(err: Record<string, unknown>, fallback: string): string {
+  const msg =
+    (typeof err.Message === "string" && err.Message) ||
+    (typeof err.message === "string" && err.message) ||
+    (typeof err.error === "string" && err.error);
+  const errors = Array.isArray(err.Errors)
+    ? err.Errors.filter((e): e is string => typeof e === "string")
+    : Array.isArray(err.errors)
+      ? err.errors.filter((e): e is string => typeof e === "string")
+      : [];
+  const parts: string[] = [];
+  if (msg) parts.push(msg);
+  if (errors.length) parts.push(errors.join(" "));
+  return parts.length ? parts.join(" — ") : fallback || "Request failed";
+}
+
 /**
  * Performs a fetch with base URL and global headers (including X-Organization-Id).
  * All APIs using this client get the same headers; no per-call setup required.
@@ -63,14 +80,22 @@ export async function apiRequest<T>(
     ...(init.headers as Record<string, string>),
   };
   const res = await fetch(url.toString(), { ...init, headers });
+  const text = await res.text();
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ message: res.statusText }));
-    const message =
-      (err as { message?: string }).message ??
-      (err as { error?: string }).error ??
-      "Request failed";
+    const err = (() => {
+      try {
+        return (JSON.parse(text) as Record<string, unknown>) || {};
+      } catch {
+        return {};
+      }
+    })();
+    const message = getApiErrorMessage(err, res.statusText);
     throw new Error(message);
   }
   if (res.status === 204) return undefined as T;
-  return res.json();
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    throw new Error("Invalid JSON response");
+  }
 }

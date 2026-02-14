@@ -22,7 +22,37 @@ export interface Organization {
   samsaraApiToken: string;
 }
 
-/** Request body for create/update (all optional except name if required by API). */
+/** Request body for create (all fields required). */
+export interface OrganizationCreatePayload {
+  name: string;
+  address: string;
+  companyContactName: string;
+  companyContactPhone: string;
+  companyContactEmail: string;
+  dotNumber: string;
+  mcNumber: string;
+  timeZone: string;
+  accountStatus: string;
+  billingStatus: string;
+  maxDriverSeats: number;
+  telematicsProvider: string;
+  samsaraApiToken: string;
+}
+
+/** Request body for update (only specific fields allowed). */
+export interface OrganizationUpdatePayload {
+  id: string;
+  address: string;
+  companyContactName: string;
+  companyContactPhone: string;
+  companyContactEmail: string;
+  dotNumber: string;
+  mcNumber: string;
+  timeZone: string;
+  maxDriverSeats: number;
+}
+
+/** Legacy type for backward compatibility. */
 export interface OrganizationPayload {
   name: string;
   address?: string;
@@ -58,5 +88,5 @@ export interface OrganizationListPagedResponse {
   succeeded?: boolean;
 }
 
-export type OrganizationCreateInput = OrganizationPayload;
-export type OrganizationUpdateInput = Partial<OrganizationPayload>;
+export type OrganizationCreateInput = OrganizationCreatePayload;
+export type OrganizationUpdateInput = OrganizationUpdatePayload;

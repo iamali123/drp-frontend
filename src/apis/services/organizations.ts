@@ -21,7 +21,9 @@ function unwrap<T>(res: OrganizationApiResponse<T> | T): T | undefined {
 
 export const organizationsService = {
   async list(): Promise<Organization[]> {
-    const res = await apiRequest<OrganizationApiResponse<Organization[]>>(BASE);
+    const res = await apiRequest<OrganizationApiResponse<Organization[]>>(
+      `${BASE}/list-organizations`
+    );
     const data = unwrap(res);
     return Array.isArray(data) ? data : [];
   },
@@ -49,10 +51,13 @@ export const organizationsService = {
   },
 
   async create(payload: OrganizationCreateInput): Promise<Organization> {
-    const res = await apiRequest<OrganizationApiResponse<Organization>>(BASE, {
-      method: "POST",
-      body: JSON.stringify(payload),
-    });
+    const res = await apiRequest<OrganizationApiResponse<Organization>>(
+      `${BASE}/create-organization`,
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }
+    );
     const data = unwrap(res);
     if (!data) throw new Error("Create organization failed");
     return data;
@@ -63,7 +68,7 @@ export const organizationsService = {
     payload: OrganizationUpdateInput
   ): Promise<Organization> {
     const res = await apiRequest<OrganizationApiResponse<Organization>>(
-      `${BASE}/${encodeURIComponent(id)}`,
+      `${BASE}/update-organizaion/${encodeURIComponent(id)}`,
       {
         method: "PUT",
         body: JSON.stringify(payload),
@@ -76,7 +81,7 @@ export const organizationsService = {
 
   async delete(id: string): Promise<void> {
     await apiRequest<OrganizationApiResponse<void>>(
-      `${BASE}/${encodeURIComponent(id)}`,
+      `${BASE}/delete-organization/${encodeURIComponent(id)}`,
       { method: "DELETE" }
     );
   },

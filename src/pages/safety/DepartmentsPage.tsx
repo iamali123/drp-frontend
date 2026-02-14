@@ -35,11 +35,13 @@ export function DepartmentsPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [editingDept, setEditingDept] = useState<Department | null>(null);
 
-  const { data: departments = [], isLoading, isError, error } = useDepartmentsList();
+  const { data: departments = [], isLoading, isError, error, refetch } = useDepartmentsList();
   const createMutation = useCreateDepartment({
     onSuccess: () => {
       setCreateOpen(false);
       setFlash({ type: "success", message: "Department created successfully." });
+      // Manually refetch to ensure the list updates immediately
+      refetch();
     },
     onError: (e) => setFlash({ type: "error", message: e.message }),
   });
@@ -47,11 +49,17 @@ export function DepartmentsPage() {
     onSuccess: () => {
       setEditingDept(null);
       setFlash({ type: "success", message: "Department updated successfully." });
+      // Manually refetch to ensure the list updates immediately
+      refetch();
     },
     onError: (e) => setFlash({ type: "error", message: e.message }),
   });
   const deleteMutation = useDeleteDepartment({
-    onSuccess: () => setFlash({ type: "success", message: "Department deleted." }),
+    onSuccess: () => {
+      setFlash({ type: "success", message: "Department deleted." });
+      // Manually refetch to ensure the list updates immediately
+      refetch();
+    },
     onError: (e) => setFlash({ type: "error", message: e.message }),
   });
 
@@ -117,7 +125,6 @@ export function DepartmentsPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Name</TableHead>
-                    <TableHead>Organization ID</TableHead>
                     <TableHead>Created</TableHead>
                     <TableHead className="w-12" />
                   </TableRow>
@@ -126,9 +133,6 @@ export function DepartmentsPage() {
                   {departments.map((d) => (
                     <TableRow key={d.id}>
                       <TableCell className="font-medium">{d.departmentName}</TableCell>
-                      <TableCell className="font-mono text-sm text-slate-600">
-                        {d.organizationId}
-                      </TableCell>
                       <TableCell className="text-slate-600">{d.createdAt}</TableCell>
                       <TableCell>
                         <DropdownMenu>

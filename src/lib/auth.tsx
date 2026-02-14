@@ -10,6 +10,7 @@ export interface User {
   email: string;
   firstName?: string;
   lastName?: string;
+  role?: string;
   isSafetyDepartment: boolean;
   isDriver: boolean;
   driverId?: number;
@@ -46,6 +47,7 @@ function userFromMe(me: ApiUser): User {
     email: me.email,
     firstName: me.firstName,
     lastName: me.lastName,
+    role: me.role,
     isSafetyDepartment,
     isDriver,
     userId: me.id,

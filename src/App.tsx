@@ -14,11 +14,15 @@ import { MaintenanceScorePage } from "@/pages/safety/MaintenanceScorePage";
 import { OperationScorePage } from "@/pages/safety/OperationScorePage";
 import { DriverListPage } from "@/pages/safety/DriverListPage";
 import { LeaveRequestsPage } from "@/pages/leave/LeaveRequestsPage";
+import { LeaveLimitsPage } from "@/pages/leave/LeaveLimitsPage";
+import { BlockLeavesPage } from "@/pages/leave/BlockLeavesPage";
 import { BonusReportsPage } from "@/pages/safety/BonusReportsPage";
 import { UsersPage } from "@/pages/safety/UsersPage";
 import { ContactQueriesPage } from "@/pages/safety/ContactQueriesPage";
 import { OrganizationsPage } from "@/pages/safety/OrganizationsPage";
 import { DepartmentsPage } from "@/pages/safety/DepartmentsPage";
+import { ScoreSettingsPage } from "@/pages/safety/ScoreSettingsPage";
+import { ScoreNotesPage } from "@/pages/safety/ScoreNotesPage";
 import { DriverDashboard } from "@/pages/driver/DriverDashboard";
 import { DriverAnalytics } from "@/pages/driver/DriverAnalytics";
 import { DriverBonuses } from "@/pages/driver/DriverBonuses";
@@ -80,11 +84,15 @@ export default function App() {
         <Route path="operations" element={<OperationScorePage />} />
         <Route path="driver-list" element={<DriverListPage />} />
         <Route path="leave-requests" element={<LeaveRequestsPage />} />
+        <Route path="leave-limits" element={<LeaveLimitsPage />} />
+        <Route path="block-leaves" element={<BlockLeavesPage />} />
         <Route path="bonus-reports" element={<BonusReportsPage />} />
         <Route path="users" element={<UsersPage />} />
         <Route path="contacts" element={<ContactQueriesPage />} />
         <Route path="organizations" element={<OrganizationsPage />} />
         <Route path="departments" element={<DepartmentsPage />} />
+        <Route path="score-settings" element={<ScoreSettingsPage />} />
+        <Route path="score-notes" element={<ScoreNotesPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="change-password" element={<ChangePasswordPage />} />
       </Route>

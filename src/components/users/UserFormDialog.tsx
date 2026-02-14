@@ -17,15 +17,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { User, CreateUserPayload, UpdateUserPayload } from "@/apis/types/users";
+import type { Organization } from "@/apis/types/organizations";
 import { useDepartmentsList } from "@/apis/hooks/useDepartments";
 
-const ROLE_OPTIONS = ["SuperAdmin", "Admin", "Driver", "Safety", "Operations"];
+const ROLE_OPTIONS = ["User", "Admin"];
 
 type UserFormDialogProps = (
   | {
       mode: "create";
       initialValues?: null;
-      defaultOrganizationId: string;
+      defaultOrganizationId?: string;
+      organizations: Organization[];
       onSubmit: (payload: CreateUserPayload) => void;
     }
   | {
@@ -48,6 +50,9 @@ export function UserFormDialog(props: UserFormDialogProps) {
   const { data: departments = [] } = useDepartmentsList();
   const [role, setRole] = useState(isEdit ? props.initialValues.role : "");
   const [departmentId, setDepartmentId] = useState("");
+  const [organizationId, setOrganizationId] = useState(
+    props.mode === "create" ? props.defaultOrganizationId ?? "" : ""
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -60,10 +65,11 @@ export function UserFormDialog(props: UserFormDialogProps) {
     } else {
       setRole("");
       setDepartmentId("");
+      setOrganizationId(props.defaultOrganizationId ?? (props.organizations[0]?.id ?? ""));
     }
     const form = document.getElementById("user-form") as HTMLFormElement | null;
     if (form) form.reset();
-  }, [open, isEdit, props.mode === "edit" ? props.initialValues?.id : null, departments]);
+  }, [open, isEdit, props.mode === "edit" ? props.initialValues?.id : null, departments, props.mode === "create" ? props.defaultOrganizationId : null, props.mode === "create" ? props.organizations : null]);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -74,13 +80,10 @@ export function UserFormDialog(props: UserFormDialogProps) {
     if (!firstName || !lastName || !email) return;
 
     if (props.mode === "create") {
-      const organizationId =
-        (form.elements.namedItem("organizationId") as HTMLInputElement)?.value.trim() ||
-        props.defaultOrganizationId;
       props.onSubmit({
         firstName,
         lastName,
-        organizationId,
+        organizationId: organizationId || props.organizations[0]?.id || "",
         departmentId: departmentId || "",
         role: role || "",
         email,
@@ -140,16 +143,25 @@ export function UserFormDialog(props: UserFormDialogProps) {
               required
             />
           </div>
-          {props.mode === "create" && (
+          {props.mode === "create" && props.organizations.length > 0 && (
             <div className="grid gap-2">
-              <Label htmlFor="organizationId">Organization ID *</Label>
-              <Input
-                id="organizationId"
-                name="organizationId"
-                defaultValue={props.defaultOrganizationId}
-                placeholder="Organization ID"
+              <Label>Organization *</Label>
+              <Select
+                value={organizationId || undefined}
+                onValueChange={setOrganizationId}
                 required
-              />
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select organization" />
+                </SelectTrigger>
+                <SelectContent>
+                  {props.organizations.map((org) => (
+                    <SelectItem key={org.id} value={org.id}>
+                      {org.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           )}
           <div className="grid gap-2">
@@ -187,7 +199,7 @@ export function UserFormDialog(props: UserFormDialogProps) {
               <input
                 type="checkbox"
                 name="isActive"
-                defaultChecked={user.isActive}
+                defaultChecked={props.initialValues.isActive}
                 className="h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500"
               />
               Active

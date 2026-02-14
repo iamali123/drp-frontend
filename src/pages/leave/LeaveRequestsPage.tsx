@@ -1,89 +1,246 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { DataTable, type Column } from "@/components/global/DataTable";
 import { Badge } from "@/components/ui/badge";
-import { Link } from "react-router-dom";
-
-const base = import.meta.env.VITE_API_BASE || "";
-
-interface LeaveRow {
-  id: number;
-  driver_id?: number;
-  driver_name?: string;
-  driver_type?: string;
-  domicile?: string;
-  leave_type?: string;
-  apply_date?: string;
-  leave_dates?: string;
-  final_status?: string;
-  leave_final_dates?: string;
-  total_leave_days?: number;
-  reason?: string;
-  document_status?: string;
-  [key: string]: unknown;
-}
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu";
+import {
+  useLeaveRequestsList,
+  useCreateLeaveRequest,
+  useUpdateLeaveRequest,
+  useDeleteLeaveRequest,
+} from "@/apis/hooks/useLeaveRequests";
+import type {
+  LeaveRequest,
+  CreateLeaveRequestPayload,
+  UpdateLeaveRequestPayload,
+} from "@/apis/types/leaveRequests";
+import { LeaveRequestFormDialog } from "@/components/leaveRequests/LeaveRequestFormDialog";
+import { FlashMessage } from "@/components/global/FlashMessage";
+import { Plus, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 
 export function LeaveRequestsPage() {
   const [month, setMonth] = useState(() => new Date().getMonth() + 1);
   const [year, setYear] = useState(() => new Date().getFullYear());
   const [option, setOption] = useState("");
+  const [createOpen, setCreateOpen] = useState(false);
+  const [editingRequest, setEditingRequest] = useState<LeaveRequest | null>(null);
+  const [flash, setFlash] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
-  const fetchData = async (params: { page: number; perPage: number; search?: string }) => {
-    const q = new URLSearchParams({
-      page: String(params.page),
-      per_page: String(params.perPage),
-      month: String(month),
-      year: String(year),
-      option,
-    });
-    if (params.search) q.set("search", params.search);
-    const res = await fetch(`${base}/leave_requests.json?${q}`);
-    const data = await res.json();
-    const rows = Array.isArray(data) ? data : data?.data ?? [];
-    return { data: rows as LeaveRow[], total: data?.total ?? rows.length };
+  const { data: allLeaveRequests = [], isLoading } = useLeaveRequestsList();
+  const createMutation = useCreateLeaveRequest({
+    onSuccess: () => {
+      setCreateOpen(false);
+      setFlash({ type: "success", message: "Leave request created successfully." });
+    },
+    onError: (e) => setFlash({ type: "error", message: e.message }),
+  });
+  const updateMutation = useUpdateLeaveRequest({
+    onSuccess: () => {
+      setEditingRequest(null);
+      setFlash({ type: "success", message: "Leave request updated." });
+    },
+    onError: (e) => setFlash({ type: "error", message: e.message }),
+  });
+  const deleteMutation = useDeleteLeaveRequest({
+    onSuccess: () => setFlash({ type: "success", message: "Leave request deleted." }),
+    onError: (e) => setFlash({ type: "error", message: e.message }),
+  });
+
+  const handleUpdate = (payload: UpdateLeaveRequestPayload) => {
+    updateMutation.mutate({ id: payload.id, payload });
+  };
+  const handleDelete = (row: LeaveRequest) => {
+    if (window.confirm(`Delete leave request for ${row.driverId} (${row.leaveType})?`)) {
+      deleteMutation.mutate(row.id);
+    }
   };
 
-  const columns: Column<LeaveRow>[] = [
-    { key: "driver_id", header: "Driver ID" },
-    { key: "driver_name", header: "Full Name" },
-    { key: "driver_type", header: "Driver Type" },
-    { key: "domicile", header: "Domicile" },
-    { key: "leave_type", header: "Type" },
-    { key: "apply_date", header: "Apply Date" },
-    { key: "leave_dates", header: "Dates" },
+  // Filter and format data for the table
+  const filteredData = useMemo(() => {
+    let filtered = allLeaveRequests;
+
+    // Filter by status
+    if (option === "pending") {
+      filtered = filtered.filter((req) => !req.leaveStatus || req.leaveStatus === "Pending");
+    } else if (option === "approved") {
+      filtered = filtered.filter((req) => req.leaveStatus === "Approved");
+    } else if (option === "denied") {
+      filtered = filtered.filter((req) => req.leaveStatus === "Denied");
+    }
+
+    // Filter by month/year
+    filtered = filtered.filter((req) => {
+      const startDate = new Date(req.leaveRequestStartDate);
+      return (
+        startDate.getMonth() + 1 === month && startDate.getFullYear() === year
+      );
+    });
+
+    return filtered;
+  }, [allLeaveRequests, month, year, option]);
+
+  const fetchData = async (params: { page: number; perPage: number; search?: string }) => {
+    let data = filteredData;
+
+    // Client-side search
+    if (params.search) {
+      const searchLower = params.search.toLowerCase();
+      data = data.filter(
+        (req) =>
+          req.driverId.toLowerCase().includes(searchLower) ||
+          req.leaveType.toLowerCase().includes(searchLower) ||
+          req.reason.toLowerCase().includes(searchLower)
+      );
+    }
+
+    // Pagination
+    const start = (params.page - 1) * params.perPage;
+    const end = start + params.perPage;
+    const paginatedData = data.slice(start, end);
+
+    return { data: paginatedData, total: data.length };
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString();
+  };
+
+  const isDefaultEmptyDate = (s: string | null | undefined) =>
+    !s || s.startsWith("0001-01-01");
+
+  const calculateDays = (startDate: string, endDate: string) => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const diffTime = Math.abs(end.getTime() - start.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+    return diffDays;
+  };
+
+  const columns: Column<LeaveRequest>[] = [
+    { key: "driverId", header: "Driver ID" },
+    { key: "leaveType", header: "Leave Type" },
     {
-      key: "final_status",
-      header: "Status",
-      render: (row) => (
-        <Badge variant={row.final_status === "Approved" ? "success" : row.final_status === "Denied" ? "destructive" : "secondary"}>
-          {String(row.final_status ?? "—")}
-        </Badge>
-      ),
+      key: "applyDates",
+      header: "Apply Date",
+      render: (row) =>
+        row.applyDates ? formatDate(row.applyDates) : formatDate(row.leaveRequestStartDate),
     },
-    { key: "leave_final_dates", header: "Final Dates" },
-    { key: "total_leave_days", header: "Total Days" },
-    { key: "reason", header: "Reason" },
-    { key: "document_status", header: "Document Status" },
     {
-      key: "manage",
-      header: "Manage Request",
+      key: "leaveRequestStartDate",
+      header: "Request Dates",
+      render: (row) =>
+        `${formatDate(row.leaveRequestStartDate)} - ${formatDate(row.leaveRequestEndDate)}`,
+    },
+    {
+      key: "leaveStatus",
+      header: "Status",
+      render: (row) => {
+        const status = row.leaveStatus || "Pending";
+        return (
+          <Badge
+            variant={
+              status === "Approved"
+                ? "outline"
+                : status === "Denied"
+                  ? "secondary"
+                  : "secondary"
+            }
+            className={
+              status === "Approved"
+                ? "text-emerald-600"
+                : status === "Denied"
+                  ? "text-red-600"
+                  : ""
+            }
+          >
+            {status}
+          </Badge>
+        );
+      },
+    },
+    {
+      key: "approvedLeaveRequestStartDate",
+      header: "Approved Dates",
+      render: (row) => {
+        const start = row.approvedLeaveRequestStartDate;
+        const end = row.approvedLeaveRequestEndDate;
+        if (isDefaultEmptyDate(start) || isDefaultEmptyDate(end)) return "—";
+        return `${formatDate(start!)} - ${formatDate(end!)}`;
+      },
+    },
+    {
+      key: "leaveRequestStartDate",
+      header: "Total Days",
+      render: (row) => calculateDays(row.leaveRequestStartDate, row.leaveRequestEndDate),
+    },
+    { key: "reason", header: "Reason" },
+    {
+      key: "rejectionNotes",
+      header: "Rejection Notes",
+      render: (row) => row.rejectionNotes ?? "—",
+    },
+    {
+      key: "actions",
+      header: "Actions",
       render: (row) => (
-        <Button asChild size="sm" variant="outline">
-          <Link to={`/admin/leave-requests/${row.id}`}>Manage</Link>
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <MoreHorizontal className="h-4 w-4" />
+              <span className="sr-only">Actions</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuItem
+              onClick={() => setEditingRequest(row)}
+              disabled={deleteMutation.isPending}
+            >
+              <Pencil className="mr-2 h-4 w-4" />
+              Edit
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => handleDelete(row)}
+              disabled={deleteMutation.isPending}
+              className="text-red-600 focus:text-red-600"
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       ),
     },
   ];
 
+  const handleCreate = (payload: CreateLeaveRequestPayload) => {
+    createMutation.mutate(payload);
+  };
+
   return (
     <div className="space-y-6">
+      <FlashMessage
+        type={flash?.type}
+        message={flash?.message ?? ""}
+        onDismiss={() => setFlash(null)}
+      />
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h2 className="text-xl font-semibold text-slate-900">Leave Requests</h2>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm">Calendar</Button>
+          <Button onClick={() => setCreateOpen(true)} size="sm" className="gap-2">
+            <Plus className="h-4 w-4" />
+            Create leave request
+          </Button>
+          {/* <Button variant="outline" size="sm">Calendar</Button>
           <Button variant="outline" size="sm">Leave Summary</Button>
-          <Button variant="outline" size="sm">Statistics</Button>
+          <Button variant="outline" size="sm">Statistics</Button> */}
         </div>
       </div>
 
@@ -120,14 +277,38 @@ export function LeaveRequestsPage() {
 
       <Card>
         <CardContent className="pt-4">
-          <DataTable<LeaveRow>
-            columns={columns}
-            fetchData={fetchData}
-            searchPlaceholder="Search here…"
-            extraParams={{ month, year, option }}
-          />
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-teal-600 border-t-transparent" />
+            </div>
+          ) : (
+            <DataTable<LeaveRequest>
+              columns={columns}
+              fetchData={fetchData}
+              searchPlaceholder="Search by Driver ID, Type, or Reason…"
+              extraParams={{ month, year, option }}
+            />
+          )}
         </CardContent>
       </Card>
+
+      <LeaveRequestFormDialog
+        mode="create"
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        onSubmit={handleCreate}
+        isSubmitting={createMutation.isPending}
+      />
+      {editingRequest && (
+        <LeaveRequestFormDialog
+          mode="edit"
+          initialValues={editingRequest}
+          open={!!editingRequest}
+          onOpenChange={(open) => !open && setEditingRequest(null)}
+          onSubmit={handleUpdate}
+          isSubmitting={updateMutation.isPending}
+        />
+      )}
     </div>
   );
 }

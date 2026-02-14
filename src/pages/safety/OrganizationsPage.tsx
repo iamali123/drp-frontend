@@ -24,7 +24,11 @@ import {
   useUpdateOrganization,
   useDeleteOrganization,
 } from "@/apis/hooks/useOrganizations";
-import type { Organization, OrganizationPayload } from "@/apis/types/organizations";
+import type {
+  Organization,
+  OrganizationCreatePayload,
+  OrganizationUpdatePayload,
+} from "@/apis/types/organizations";
 import { OrganizationFormDialog } from "@/components/organizations/OrganizationFormDialog";
 import { FlashMessage } from "@/components/global/FlashMessage";
 
@@ -33,11 +37,12 @@ export function OrganizationsPage() {
   const [editingOrg, setEditingOrg] = useState<Organization | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
 
-  const { data: organizations = [], isLoading, isError, error } = useOrganizationsList();
+  const { data: organizations = [], isLoading, isError, error, refetch } = useOrganizationsList();
   const createMutation = useCreateOrganization({
     onSuccess: () => {
       setCreateOpen(false);
       setFlash({ type: "success", message: "Organization created successfully." });
+      refetch();
     },
     onError: (e) => setFlash({ type: "error", message: e.message }),
   });
@@ -45,20 +50,24 @@ export function OrganizationsPage() {
     onSuccess: () => {
       setEditingOrg(null);
       setFlash({ type: "success", message: "Organization updated successfully." });
+      refetch();
     },
     onError: (e) => setFlash({ type: "error", message: e.message }),
   });
   const deleteMutation = useDeleteOrganization({
-    onSuccess: () => setFlash({ type: "success", message: "Organization deleted." }),
+    onSuccess: () => {
+      setFlash({ type: "success", message: "Organization deleted." });
+      refetch();
+    },
     onError: (e) => setFlash({ type: "error", message: e.message }),
   });
 
-  const handleCreate = (payload: OrganizationPayload) => {
+  const handleCreate = (payload: OrganizationCreatePayload) => {
     createMutation.mutate(payload);
   };
-  const handleUpdate = (payload: OrganizationPayload) => {
+  const handleUpdate = (payload: OrganizationUpdatePayload) => {
     if (!editingOrg?.id) return;
-    updateMutation.mutate({ id: editingOrg.id, payload });
+    updateMutation.mutate({ id: payload.id, payload });
   };
   const handleDelete = (org: Organization) => {
     if (!window.confirm(`Delete "${org.name}"?`)) return;
@@ -189,6 +198,7 @@ export function OrganizationsPage() {
       </Card>
 
       <OrganizationFormDialog
+        mode="create"
         open={createOpen}
         onOpenChange={setCreateOpen}
         title="Add organization"
@@ -197,15 +207,18 @@ export function OrganizationsPage() {
         onSubmit={handleCreate}
         isSubmitting={createMutation.isPending}
       />
-      <OrganizationFormDialog
-        open={!!editingOrg}
-        onOpenChange={(open) => !open && setEditingOrg(null)}
-        title="Edit organization"
-        submitLabel="Save"
-        initialValues={editingOrg ?? undefined}
-        onSubmit={handleUpdate}
-        isSubmitting={updateMutation.isPending}
-      />
+      {editingOrg && (
+        <OrganizationFormDialog
+          mode="edit"
+          open={!!editingOrg}
+          onOpenChange={(open) => !open && setEditingOrg(null)}
+          title="Edit organization"
+          submitLabel="Save"
+          initialValues={editingOrg}
+          onSubmit={handleUpdate}
+          isSubmitting={updateMutation.isPending}
+        />
+      )}
     </div>
   );
 }

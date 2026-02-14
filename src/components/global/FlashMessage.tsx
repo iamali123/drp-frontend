@@ -31,7 +31,7 @@ export function FlashMessage({
   return (
     <div
       className={cn(
-        "rounded-lg border px-4 py-3 text-sm font-medium shadow-sm transition-opacity duration-300",
+        "fixed top-4 left-1/2 z-[100] w-full max-w-md -translate-x-1/2 rounded-lg border px-4 py-3 text-sm font-medium shadow-lg transition-opacity duration-300",
         type === "success" &&
           "border-emerald-200 bg-emerald-50 text-emerald-800",
         type === "error" && "border-red-200 bg-red-50 text-red-800",

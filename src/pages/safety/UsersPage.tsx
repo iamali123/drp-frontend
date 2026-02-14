@@ -26,6 +26,7 @@ import {
   useUpdateUser,
   useDeleteUser,
 } from "@/apis/hooks/useUsers";
+import { useOrganizationsList } from "@/apis/hooks/useOrganizations";
 import type { User, CreateUserPayload, UpdateUserPayload } from "@/apis/types/users";
 import { MoreHorizontal, Plus, Pencil, Trash2, Users } from "lucide-react";
 
@@ -36,11 +37,13 @@ export function UsersPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
 
-  const { data: users = [], isLoading, isError, error } = useUsersList();
+  const { data: organizations = [] } = useOrganizationsList();
+  const { data: users = [], isLoading, isError, error, refetch } = useUsersList();
   const createMutation = useCreateUser({
     onSuccess: () => {
       setCreateOpen(false);
       setFlash({ type: "success", message: "User created successfully." });
+      refetch();
     },
     onError: (e) => setFlash({ type: "error", message: e.message }),
   });
@@ -48,11 +51,15 @@ export function UsersPage() {
     onSuccess: () => {
       setEditingUser(null);
       setFlash({ type: "success", message: "User updated successfully." });
+      refetch();
     },
     onError: (e) => setFlash({ type: "error", message: e.message }),
   });
   const deleteMutation = useDeleteUser({
-    onSuccess: () => setFlash({ type: "success", message: "User removed." }),
+    onSuccess: () => {
+      setFlash({ type: "success", message: "User removed." });
+      refetch();
+    },
     onError: (e) => setFlash({ type: "error", message: e.message }),
   });
 
@@ -80,16 +87,16 @@ export function UsersPage() {
         </h2>
         <Button
           onClick={() => setCreateOpen(true)}
-          disabled={!defaultOrganizationId}
+          disabled={organizations.length === 0}
           className="gap-2"
         >
           <Plus className="h-4 w-4" />
           Add user
         </Button>
       </div>
-      {!defaultOrganizationId && (
+      {organizations.length === 0 && (
         <p className="text-sm text-amber-700">
-          Sign in with an organization context to create users.
+          No organizations available. Create an organization first to add users.
         </p>
       )}
 
@@ -186,6 +193,7 @@ export function UsersPage() {
         mode="create"
         open={createOpen}
         onOpenChange={setCreateOpen}
+        organizations={organizations}
         defaultOrganizationId={defaultOrganizationId}
         onSubmit={handleCreate}
         isSubmitting={createMutation.isPending}

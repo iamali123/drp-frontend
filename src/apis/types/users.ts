@@ -31,6 +31,15 @@ export interface UserApiResponse<T = User> {
   message?: string;
 }
 
+/** GET get-states response: array of state names or state objects. */
+export type StateItem = string | { code?: string; name?: string; [key: string]: unknown };
+
+/** Normalized state for dropdown: display name, submit as code-name. */
+export interface StateOption {
+  code: string;
+  name: string;
+}
+
 export interface UpdateUserPayload {
   id: string;
   firstName: string;

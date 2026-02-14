@@ -67,6 +67,17 @@ export const authStore = {
     }
   },
 
+  /** Set organization ID only (e.g. for SuperAdmin switching context). Persists to localStorage. */
+  setOrganizationId(organizationId: string | null): void {
+    memoryOrgId = organizationId;
+    try {
+      if (organizationId) localStorage.setItem(ORG_ID_KEY, organizationId);
+      else localStorage.removeItem(ORG_ID_KEY);
+    } catch {
+      /* ignore */
+    }
+  },
+
   clearAuth(): void {
     memoryToken = null;
     memoryOrgId = null;
